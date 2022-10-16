@@ -1,8 +1,6 @@
 package client;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,11 +24,8 @@ public class Client {
     InetAddress ip;
     BufferedReader keyboard;
     
-    DataOutputStream out;
-    //DataInputStream in;
-
     BufferedReader input;
-    //BufferedWriter output;
+    BufferedWriter output;
 
     List<String> fileContent;
 
@@ -64,16 +59,12 @@ public class Client {
                 attempts++;
             }
             if (socket == null) {
-                throw new IOException("Can't estabilish connection with server!");
+                throw new IOException("[CLIENT] Can't estabilish connection with server!");
             } else {
-                System.out.println("Connected to the server!");
+                System.out.println("[CLIENT] Connected!");
             }
-
-            out = new DataOutputStream(socket.getOutputStream());
-            //in = new DataInputStream(socket.getInputStream());
-
             input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            //output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+            output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
         } catch (UnknownHostException e) {
             System.err.println(e.getMessage()+"\nUnknown local host address");
             System.exit(2);
@@ -91,27 +82,26 @@ public class Client {
     protected void communicate() {
         try {
             System.out.print("- Enter file name to transfer: ");
-            String filename = keyboard.readLine().replace(".txt","") +".txt";
-            
-            out.writeBytes(filename + "\n");
-            //output.write(filename+"\n");
+            String filename = keyboard.readLine().replace(".txt","")+".txt";
 
+            output.write(filename);
+            output.newLine();
+            output.flush();
 
             String response = input.readLine();
             if (Boolean.parseBoolean(response)) {
                 int fileLen = Integer.parseInt(input.readLine());
                 FileWriter fw = new FileWriter(dirPath + filename);
-                System.out.println("- File content:");
+                System.out.println("\n- File content:");
                 for (int i = 0; i < fileLen; i++) {
                     String lineReceived = input.readLine();
                     fw.append(lineReceived + "\n");
                     System.out.println("\t"+lineReceived);
                 }
                 fw.close();
-                System.out.println(input.readLine());
+                System.out.println("\n"+input.readLine());
             } else {
                 System.out.println(input.readLine());
-               
             }
             socket.close();
         } catch (IOException e) {

@@ -1,8 +1,6 @@
 package server;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,9 +24,7 @@ public class Server {
     ServerSocket server = null;
     Socket socket = null;
     BufferedReader input = null;
-    //BufferedWriter output = null;
-    DataOutputStream out = null;
-    //DataInputStream in = null;
+    BufferedWriter output = null;
 
     File file;
     int attempts = 0;
@@ -58,8 +54,8 @@ public class Server {
             server.close();
 
             input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            //output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            out = new DataOutputStream(socket.getOutputStream());
+            output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+            System.out.println("[SERVER] Connected!");
         } catch (IOException e) {
             System.out.println(e.getMessage());
             System.out.println("[CLIENT] Connection failed!");
@@ -75,35 +71,26 @@ public class Server {
      */
     public void communicate() {
         try {
-            String filename = input.readLine();
+            String filename = input.readLine(); 
             file = new File(dirPath + filename);
 
             if (file.exists()) {
-
-                out.writeBytes("true" + "\n");
-                //output.write("true" + "\n");
+                send("true");
                 List<String> fileContent = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
-
-                out.writeBytes(fileContent.size() + "\n");
-                //output.write(fileContent.size() + "\n");
-                out.flush();
-                //output.flush();
-
+                send(String.valueOf(fileContent.size()));
                 for (String line : fileContent) {
-                    line = line.replaceAll("[^a-zA-Z0-9 ]", "");
-                    out.writeBytes(line + "\n");
-                    //output.write(line+"\n");
-                    out.flush();
-                    //output.flush();
+                    if(line.length()>0){
+                        line = line.replaceAll("[^a-zA-Z0-9 ]", "");
+                        send(line);
+                    }else{
+                        continue;
+                    }
                 }
-                //output.write("[SERVER] File transer successfully!" + "\n");
-                out.writeBytes("[SERVER] File transer successfully!" + "\n");
-                System.out.println("[SERVER] File transer successfully!");
+                send("[SERVER] File transfered successfully!");
+                System.out.println("[SERVER] File transfered successfully!");
             } else {
-                out.writeBytes("false" + "\n");
-                //output.write("false" + "\n");
-                out.writeBytes("[SERVER] - File not found" + "\n");
-                //output.write("[SERVER] - File not found" + "\n");
+                send("false");
+                send("[SERVER] - File not found");
                 System.err.println("[SERVER] - File not found");
             }
 
@@ -112,6 +99,17 @@ public class Server {
             System.out.println(e.getMessage());
             System.out.println("[SERVER]\tError during connection");
             System.exit(1);
+        }
+    }
+
+    private void send(String text){
+        try {
+            output.write(text);
+            output.newLine();
+            output.flush();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            System.exit(4);
         }
     }
 
