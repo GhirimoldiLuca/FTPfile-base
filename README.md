@@ -11,5 +11,5 @@ server/file.txt is the file to transfer from server/ to client/
 The workspace contains two oflders, where:
 
 - `client`: containt the client files
-- `out`: containt the server files
+- `server`: containt the server files
 
