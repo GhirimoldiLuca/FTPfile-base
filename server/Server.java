@@ -1,14 +1,20 @@
 package server;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -71,29 +77,31 @@ public class Server {
      */
     public void communicate() {
         try {
-            String filename = input.readLine(); 
-            file = new File(dirPath + filename);
+            File cwd = new File(System.getProperty("user.dir") + "/server/");
 
-            if (file.exists()) {
-                send("true");
-                List<String> fileContent = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
-                send(String.valueOf(fileContent.size()));
-                for (String line : fileContent) {
-                    if(line.length()>0){
-                        line = line.replaceAll("[^a-zA-Z0-9 ]", "");
-                        send(line);
-                    }else{
-                        continue;
-                    }
+            FilenameFilter filter = new FilenameFilter() {
+                @Override
+                public boolean accept(File f, String name) {
+                    return name.contains(".");
                 }
-                send("[SERVER] File transfered successfully!");
-                System.out.println("[SERVER] File transfered successfully!");
-            } else {
-                send("false");
-                send("[SERVER] - File not found");
-                System.err.println("[SERVER] - File not found");
-            }
+            };
 
+            List<File> files = Arrays.asList(cwd.listFiles(filter));
+            send(String.valueOf(files.size()));
+            files.forEach(e -> send((e.getName()).replace(cwd.getName(), "")));
+
+            int chosen = Integer.parseInt(input.readLine()) - 1;
+            File fileChosen = new File(files.get(chosen).getName());
+            send(fileChosen.getName());
+            long lines = Files.lines(files.get(chosen).toPath()).count();
+            send(String.valueOf(lines));
+
+            BufferedReader brf = new BufferedReader(new FileReader("server/" + fileChosen.getName()));
+            for (long i = 0; i < lines; i++) {
+                send(brf.readLine().replaceAll("[^a-zA-Z0-9 ]", ""));
+            }
+            brf.close();
+            System.out.println("File transfered!");
             socket.close();
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -102,7 +110,7 @@ public class Server {
         }
     }
 
-    private void send(String text){
+    private void send(String text) {
         try {
             output.write(text);
             output.newLine();
