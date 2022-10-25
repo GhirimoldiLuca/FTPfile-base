@@ -99,7 +99,7 @@ public class Client {
                 int lines = Integer.parseInt(input.readLine());
                 System.out.println("File content: ");
                 for (int i = 0; i < lines; i++) {
-                    System.out.println("\t"+gi);
+                    System.out.println("\t"+i);
                     fw.append(input.readLine() + "\n");
                 }
                 fw.close();
